@@ -1,0 +1,10 @@
+---
+replicaCount: 1
+persistence:
+  enabled: true
+  size: 10Gi
+  deleteEnabled: true
+  storageClass: csi-cinder-classic
+  existingClaim: docker-registry-pv-claim
+secrets:
+  htpasswd: toto:$2y$05$KtdObhOqGi.8YYePFSNHOudiPtXnYJC78nBQ2ypJWgEGhRRBkexRS
