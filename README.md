@@ -50,3 +50,11 @@ docker image push --all-tags localhost:5001/yohan-engineer/node-api-app
 ## Deploy
 
 ## Other
+
+Access to the API :
+
+https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster-services/
+
+```bash
+http://127.0.0.1:36257/api/v1/namespaces/tp-namespace/services/http:api-service:8080/proxy/
+```
