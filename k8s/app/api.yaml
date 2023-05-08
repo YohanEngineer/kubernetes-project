@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: api
-        image: 192.168.8.156:5001/yohan-engineer/node-api-app:3.0.0
+        image: registry.digitalocean.com/episen-registry/node-api-app:1.0.0
         ports:
         - containerPort: 8080
 

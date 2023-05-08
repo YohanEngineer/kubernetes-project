@@ -5,10 +5,9 @@ const HOST = "0.0.0.0";
 
 const ExpressRedisCache = require("express-redis-cache");
 const cache = ExpressRedisCache({
-  host: "redis",
-  port: 6379,
-  // cache expire after 10 seconds
-  expire: 60,
+  host: "redis-service", 
+  port: 6379,          
+  expire: 60,          
 });
 
 let value = 0;

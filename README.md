@@ -4,16 +4,17 @@
 Rédiger une documentation complète à la racine du dépôt (README.md) expliquant les prérequis, présentant les composants de l'application, l'organisation de votre code, le rôle des composants, les instructions pour développer/tester les composants sans Docker/Kubernetes + avec Docker + avec Kubernetes, les instructions de build et de déploiement, et/ou toute information utile
 
 
-## Goal
+## Objectif
 
-The aim of this project is to use a singlenode Kubernetes cluster and deploy a simple API application on it running with a Redis Cache.
+L'objectif de ce projet est d'utiliser un cluster Kubernetes à un seul nœud et d'y déployer une application API simple fonctionnant avec un cache Redis.
 
-## Pre-requisites
+## Prérequis
 
 - NodeJS
 - NPM
 - Docker
-- Kubernetes (minikube)
+- Kubernetes (Digital Ocean Cluster)
+- Container Registry
 
 ## Minikube
 
@@ -29,32 +30,32 @@ kubectl create namespace tp-namespace
 
 ```bash
 # Tag image
-docker image tag yohan-engineer/node-api-app:3.0.0 localhost:5001/yohan-engineer/node-api-app:3.0.0
+docker image tag yohanengineer/node-api-app:1.0.0 localhost:5001/yohanengineer/node-api-app:1.0.0
 # Push image
-docker image push --all-tags localhost:5001/yohan-engineer/node-api-app
+docker image push --all-tags localhost:5001/yohanengineer/node-api-app
 ```
-## Components
+## Composants
 
-## Code structure
+## Structure du code
 
-## Components roles
+## Rôle des composants
 
-## Develop/test without Docker/Kubernetes
+## Developper/tester sans Docker/Kubernetes
 
-## Develop/test with Docker
+## Developper/tester avec Docker
 
-## Develop/test with Kubernetes
+## Developper/tester avec Kubernetes
 
 ## Build
 
-## Deploy
+## Deployer
 
-## Other
+## Autre
 
 Access to the API :
 
 https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster-services/
 
 ```bash
-http://127.0.0.1:36257/api/v1/namespaces/tp-namespace/services/http:api-service:8080/proxy/
+http://127.0.0.1:53587/api/v1/namespaces/tp-namespace/services/http:api-service:8080/proxy/
 ```
