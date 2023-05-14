@@ -13,7 +13,7 @@ L'objectif de ce projet est d'utiliser un cluster Kubernetes à un seul nœud et
 
 J'ai fait le choix d'utiliser un cluster Kubernetes hébergé dans le cloud après avoir rencontré des problèmes avec Kubernetes In Docker lors d'un redémarrage de Docker. J'ai ensuite utilisé Minikube, mais j'ai rencontré des problèmes de connectivité entre le cache et l'API.  J'ai choisi Digital Ocean car il propose un cluster Kubernetes gratuit pendant 30 jours. J'ai donc créé un cluster Kubernetes à un seul nœud sur Digital Ocean et j'ai déployé mon application dessus. Finalement, les problèmes de connectivité entre le cache et l'API sont toujours présents, il ne s'agissait donc pas d'un problème lié à Minikube.
 
-Ensuite je me suis rendu compte que l'erreur ne provenait pas de la connexion car j'ai essayé de mettre dans un même pod l'application et le cache et ainsi je pouvais utiliser localhost pour la connexion. Mais rien n'y fait, le container de l'application ne se lance pas et me met l'erreur 'exec /usr/local/bin/docker-entrypoint.sh: exec format error'. En effet, il semblerait que le fait de build l'image sur Mac M1 soit la cause de mes problèmes. 
+Ensuite je me suis rendu compte que l'erreur ne provenait pas de la connexion car j'ai essayé de mettre dans un même pod l'application et le cache et ainsi je pouvais utiliser localhost pour la connexion. Mais rien n'y fait, le container de l'application ne se lance pas et me met l'erreur 'exec /usr/local/bin/docker-entrypoint.sh: exec format error'. En effet, il semblerait que le fait de build l'image sur Mac M1 soit la cause de mes problèmes...
 
 
 ## Prérequis
@@ -39,17 +39,25 @@ Ensuite je me suis rendu compte que l'erreur ne provenait pas de la connexion ca
 │   │   └── api.yaml
 │   ├── cache
 │      └── cache.yaml
-│   ├── scripts
-│      └── start_all.sh
 └── scripts
-    └── build.sh
+    ├── build-docker.sh
+    └── deploy-k8s.sh
 ```
 
-Le code de l'application se décompose en quatre parties : l'application en elle-même, le dossier k8s-1-service où on met dans le même pod l'application et le cache et le dossier k8s-2-services où on met l'application et le cache dans deux pods différents. Le dossier scripts contient les scripts pour build les images et les déployer sur le cluster Kubernetes.
+Le code de l'application se décompose en quatre parties : l'application en elle-même, le dossier k8s-1-service où on met dans le même pod l'application et le cache et le dossier k8s-2-services où on met l'application et le cache dans deux pods différents. Le dossier scripts contient les scripts pour build les images et déployer sur le cluster Kubernetes.
 
 ## Composants - k8s-2-service
 
 L'application se décompose en 2 parties avec d'une part l'API et d'autre part le cache Redis. L'ensemble des ressources kubernetes est créé dans le namespace <b>tp-namespace</b> afin d'avoir un namespace spécifique à notre application dans le cas où notre cluster serait amené à être utilisé pour de nombreuses applications.
+
+Pour créer le namespace : 
+```bash
+kubectl create namespace tp-namespace
+```
+
+L'architecture du projet Kubernetes est la suivante :
+
+![Architecture](./assets/archi.png)
 
 ### Cache Redis
 
@@ -107,18 +115,22 @@ Ou alors on peut utiliser docker-compose. Il faut lancer la commande <b> docker-
 Le docker-compose.yml est le suivant :
 
 ```bash
-version: '3.8'
+version: "3"
 services:
   redis:
+    container_name: redis-cache
     image: redis
     ports:
-      - 6379:6379
-  api:
-    image: registry.digitalocean.com/episen-registry/node-api-app:1.0.0
-    ports:
-      - 8080:8080
-    links:
+      - "6379:6379"
+  app:
+    container_name: app
+    image: registry.digitalocean.com/episen-registry/node-api-app:1.0.0-local
+    depends_on:
       - redis
+    ports:
+      - "8080:8080"
+
+
 ```
 
 ### Développer/tester avec Kubernetes
@@ -143,15 +155,15 @@ kubectl apply -f api-hpa.yml
 Pour build l'image Docker de l'API, il faut lancer les commandes suivantes :
 
 ```bash
-# Create a new registry on Digital Ocean Container Registry
+# Créer un nouveau registry avec Digital Ocean Container Registry
 doctl registry create episen-registry
-# Login to the registry
+# Se connecter au registry
 doctl registry login
-# Build the image
+# Construire l'image
 docker build -t node-api-app:1.0.0 .
-# Tag the image
+# Tag l'image
 docker tag node-api-app:1.0.0  registry.digitalocean.com/episen-registry/node-api-app:1.0.0
-# Push the image
+# Pousser l'image
 docker push  registry.digitalocean.com/episen-registry/node-api-app:1.0.0
 ```
 

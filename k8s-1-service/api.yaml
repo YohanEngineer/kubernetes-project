@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-deployment
+  namespace: tp-namespace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+      - name: 
+        image: registry.digitalocean.com/episen-registry/node-api-app:2.0.0-local
+        ports:
+        - containerPort: 8080
+      - name: cache
+        image: redis
+        command: ["redis-server", "--bind", "0.0.0.0"]
+        ports:
+        - containerPort: 6379
+      - name: ubuntu
+        image: ubuntu
+        args: [bash, -c, 'apt-get update && apt-get -y install redis-tools curl less net-tools && while true ; do sleep 1000; done']
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-service
+  namespace: tp-namespace
+spec:
+  selector:
+    app: api
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
+
