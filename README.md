@@ -11,7 +11,10 @@ L'objectif de ce projet est d'utiliser un cluster Kubernetes à un seul nœud et
 
 ## Remarques
 
-J'ai fait le choix d'utiliser un cluster Kubernetes hébergé dans le cloud après avoir rencontré des problèmes avec Kubernetes In Docker lors d'un redémarrage de Docker. J'ai ensuite utilisé Minikube, mais j'ai rencontré des problèmes de connectivité entre le cache et l'API.  J'ai choisi Digital Ocean car il propose un cluster Kubernetes gratuit pendant 30 jours. J'ai donc créé un cluster Kubernetes à un seul nœud sur Digital Ocean et j'ai déployé mon application dessus. Finalement, les problèmes de connectivité entre le cache et l'API sont toujours présents, il ne s'agissait donc pas d'un problème lié à Minikube...
+J'ai fait le choix d'utiliser un cluster Kubernetes hébergé dans le cloud après avoir rencontré des problèmes avec Kubernetes In Docker lors d'un redémarrage de Docker. J'ai ensuite utilisé Minikube, mais j'ai rencontré des problèmes de connectivité entre le cache et l'API.  J'ai choisi Digital Ocean car il propose un cluster Kubernetes gratuit pendant 30 jours. J'ai donc créé un cluster Kubernetes à un seul nœud sur Digital Ocean et j'ai déployé mon application dessus. Finalement, les problèmes de connectivité entre le cache et l'API sont toujours présents, il ne s'agissait donc pas d'un problème lié à Minikube.
+
+Ensuite je me suis rendu compte que l'erreur ne provenait pas de la connexion car j'ai essayé de mettre dans un même pod l'application et le cache et ainsi je pouvais utiliser localhost pour la connexion. Mais rien n'y fait, le container de l'application ne se lance pas et me met l'erreur 'exec /usr/local/bin/docker-entrypoint.sh: exec format error'. En effet, il semblerait que le fait de build l'image sur Mac M1 soit la cause de mes problèmes. 
+
 
 ## Prérequis
 
@@ -25,16 +28,26 @@ J'ai fait le choix d'utiliser un cluster Kubernetes hébergé dans le cloud apr�
 
 ```bash	
 ├───app
-├───k8s
-│   ├───app
-│   ├───cache
-│   └───scripts
-└───scripts
+├── k8s-1-service
+│   ├── api-hpa.yaml
+│   ├── api-ingress.yaml
+│   └── api.yaml
+├── k8s-2-services
+│   ├── app
+│   │   ├── api-hpa.yaml
+│   │   ├── api-ingress.yaml
+│   │   └── api.yaml
+│   ├── cache
+│      └── cache.yaml
+│   ├── scripts
+│      └── start_all.sh
+└── scripts
+    └── build.sh
 ```
 
-Le code de l'application se décompose en trois parties : l'application en elle-même, les ressources Kubernetes et les scripts qui permettent ...
+Le code de l'application se décompose en quatre parties : l'application en elle-même, le dossier k8s-1-service où on met dans le même pod l'application et le cache et le dossier k8s-2-services où on met l'application et le cache dans deux pods différents. Le dossier scripts contient les scripts pour build les images et les déployer sur le cluster Kubernetes.
 
-## Composants
+## Composants - k8s-2-service
 
 L'application se décompose en 2 parties avec d'une part l'API et d'autre part le cache Redis. L'ensemble des ressources kubernetes est créé dans le namespace <b>tp-namespace</b> afin d'avoir un namespace spécifique à notre application dans le cas où notre cluster serait amené à être utilisé pour de nombreuses applications.
 
@@ -71,13 +84,63 @@ L'Ingress est un objet Kubernetes qui gère l'accès externe aux services dans u
 #### HorizontalPodAutoscaler
 L'HPA est un objet Kubernetes qui automatise le redimensionnement horizontal du nombre de réeplicas d'un déploiement, d'un ReplicaSet ou d'un StatefulSet en fonction de l'utilisation des ressources. Cet HPA surveille l'utilisation du CPU pour le déploiement api-deployment et ajuste automatiquement le nombre de replicas entre 1 et 5 en fonction de l'utilisation moyenne du CPU. Si l'utilisation moyenne du CPU dépasse 50%, il augmentera le nombre de replicas pour équilibrer la charge.
 
-## Développer/tester sans Docker/Kubernetes
+## Développer/tester avec le dossier k8s-2-service
 
-## Développer/tester avec Docker
+### Développer/tester sans Docker/Kubernetes
 
-## Développer/tester avec Kubernetes
+Pour développer en local sans Docker/Kubernetes, il faut installer NodeJS et Redis. Ensuite, il faut lancer Redis avec la commande redis-server. Enfin, il faut lancer l'API avec la commande <b> node server.js </b>.
 
-## Build
+### Développer/tester avec Docker
+
+Pour développer en local avec Docker, il faut installer Docker. Ensuite, il faut lancer Redis avec la commande :
+```bash
+docker run --name redis -p 6379:6379 -d redis 
+```
+
+Enfin, il faut lancer l'API avec la commande :
+```bash
+docker run -p 8080:8080 --link redis:redis -d registry.digitalocean.com/episen-registry/node-api-app:1.0.0 
+```
+
+Ou alors on peut utiliser docker-compose. Il faut lancer la commande <b> docker-compose up </b>.
+
+Le docker-compose.yml est le suivant :
+
+```bash
+version: '3.8'
+services:
+  redis:
+    image: redis
+    ports:
+      - 6379:6379
+  api:
+    image: registry.digitalocean.com/episen-registry/node-api-app:1.0.0
+    ports:
+      - 8080:8080
+    links:
+      - redis
+```
+
+### Développer/tester avec Kubernetes
+
+Pour développer en local avec Kubernetes, il faut installer Docker et Kubernetes. Ensuite, il faut lancer Redis avec la commande :
+```bash
+cd k8s-2-service/cache
+kubectl apply -f cache.yml
+```
+
+Enfin, il faut lancer l'API avec la commande :
+```bash
+cd k8s-2-service/api
+kubectl apply -f api.yml
+kubectl apply -f api-ingress.yml
+kubectl apply -f api-hpa.yml
+```
+
+
+### Build
+
+Pour build l'image Docker de l'API, il faut lancer les commandes suivantes :
 
 ```bash
 # Create a new registry on Digital Ocean Container Registry
@@ -92,14 +155,16 @@ docker tag node-api-app:1.0.0  registry.digitalocean.com/episen-registry/node-ap
 docker push  registry.digitalocean.com/episen-registry/node-api-app:1.0.0
 ```
 
-## Déployer
-
-## Autre
-
-Access to the API :
-
-https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster-services/
-
+Ces commandes peuvent être lancées avec le script suivant :
 ```bash
-http://127.0.0.1:53587/api/v1/namespaces/tp-namespace/services/http:api-service:8080/proxy/
+cd scripts
+sh build-docker.sh
+```
+
+### Déployer
+
+Pour déployer les composants sur Kubernetes, il faut lancer les commandes suivantes :
+```bash
+cd scripts
+sh deploy-k8s.sh
 ```

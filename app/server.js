@@ -4,11 +4,34 @@ const PORT = 8080;
 const HOST = "0.0.0.0";
 
 const ExpressRedisCache = require("express-redis-cache");
-const cache = ExpressRedisCache({
-  host: "redis-service", 
-  port: 6379,          
-  expire: 60,          
-});
+
+const connectToRedis = () => {
+  const cache = ExpressRedisCache({
+    host: "localhost",
+    port: 6379,
+    expire: 60,
+    retry_strategy: function (options) {
+      if (options.error && options.error.code === "ECONNREFUSED") {
+        // Connexion refusée - retourne une erreur pour arrêter la connexion
+        return new Error("The server refused the connection");
+      }
+      // Réessaye après 1 seconde
+      return 1000;
+    },
+  });
+
+  cache.on("error", (err) => {
+    console.error("Redis error:", err);
+  });
+
+  cache.on("connected", () => {
+    console.log("Connected to Redis");
+  });
+
+  return cache;
+};
+
+const cache = connectToRedis();
 
 let value = 0;
 
