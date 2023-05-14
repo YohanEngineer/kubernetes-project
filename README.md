@@ -46,7 +46,7 @@ Ensuite je me suis rendu compte que l'erreur ne provenait pas de la connexion ca
 
 Le code de l'application se décompose en quatre parties : l'application en elle-même, le dossier k8s-1-service où on met dans le même pod l'application et le cache et le dossier k8s-2-services où on met l'application et le cache dans deux pods différents. Le dossier scripts contient les scripts pour build les images et déployer sur le cluster Kubernetes.
 
-## Composants - k8s-2-service
+## Composants - k8s-2-services
 
 L'application se décompose en 2 parties avec d'une part l'API et d'autre part le cache Redis. L'ensemble des ressources kubernetes est créé dans le namespace <b>tp-namespace</b> afin d'avoir un namespace spécifique à notre application dans le cas où notre cluster serait amené à être utilisé pour de nombreuses applications.
 
@@ -92,7 +92,7 @@ L'Ingress est un objet Kubernetes qui gère l'accès externe aux services dans u
 #### HorizontalPodAutoscaler
 L'HPA est un objet Kubernetes qui automatise le redimensionnement horizontal du nombre de réeplicas d'un déploiement, d'un ReplicaSet ou d'un StatefulSet en fonction de l'utilisation des ressources. Cet HPA surveille l'utilisation du CPU pour le déploiement api-deployment et ajuste automatiquement le nombre de replicas entre 1 et 5 en fonction de l'utilisation moyenne du CPU. Si l'utilisation moyenne du CPU dépasse 50%, il augmentera le nombre de replicas pour équilibrer la charge.
 
-## Développer/tester avec le dossier k8s-2-service
+## Développer/tester avec le dossier k8s-2-services
 
 ### Développer/tester sans Docker/Kubernetes
 
@@ -137,13 +137,13 @@ services:
 
 Pour développer en local avec Kubernetes, il faut installer Docker et Kubernetes. Ensuite, il faut lancer Redis avec la commande :
 ```bash
-cd k8s-2-service/cache
+cd k8s-2-services/cache
 kubectl apply -f cache.yml
 ```
 
 Enfin, il faut lancer l'API avec la commande :
 ```bash
-cd k8s-2-service/api
+cd k8s-2-services/api
 kubectl apply -f api.yml
 kubectl apply -f api-ingress.yml
 kubectl apply -f api-hpa.yml
